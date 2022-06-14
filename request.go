@@ -36,7 +36,7 @@ type Request struct {
 	Params  *url.Values // URL query parameters
 	Payload interface{} // Data to JSON-encode and POST
 
-	// Can be set to true if Payload is of type io.Reader and client
+	// Can be set to true if Payload is of type io.Reader and  client
 	StreamPayload bool
 
 	// Not capture response body and unmarshaled
