@@ -15,6 +15,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -95,6 +96,7 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 	}
 	var req *http.Request
 	var buf *bytes.Buffer
+	var steam io.Reader
 	if r.Payload != nil {
 		if r.RawPayload {
 			var ok bool
@@ -103,6 +105,16 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 			buf, ok = r.Payload.(*bytes.Buffer)
 			if !ok {
 				err = errors.New("Payload must be of type *bytes.Buffer if RawPayload is set to true")
+				return
+			}
+			// do not overwrite the content type with raw payload
+		} else if r.StreamPayload {
+			var ok bool
+			// buf can be nil interface at this point
+			// so we'll do extra nil check
+			steam, ok = r.Payload.(io.Reader)
+			if !ok {
+				err = errors.New("Payload must be of type io.Reader if StreamPayload is set to true")
 				return
 			}
 
@@ -121,6 +133,8 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 		}
 		if buf != nil {
 			req, err = http.NewRequest(r.Method, u.String(), buf)
+		} else if steam != nil {
+			req, err = http.NewRequest(r.Method, u.String(), steam)
 		} else {
 			req, err = http.NewRequest(r.Method, u.String(), nil)
 		}
@@ -206,29 +220,33 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 		s.log(err)
 		return
 	}
-	defer resp.Body.Close()
 	r.status = resp.StatusCode
 	r.response = resp
 
-	//
-	// Unmarshal
-	//
-	r.body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		s.log(err)
-		return
-	}
-	if string(r.body) != "" {
-		if resp.StatusCode < 300 && r.Result != nil {
-			err = json.Unmarshal(r.body, r.Result)
+	if !r.NotProcessBody {
+		defer resp.Body.Close()
+
+		//
+		// Unmarshal
+		//
+		r.body, err = ioutil.ReadAll(resp.Body)
+		if err != nil {
+			s.log(err)
+			return
 		}
-		if resp.StatusCode >= 400 && r.Error != nil {
-			json.Unmarshal(r.body, r.Error) // Should we ignore unmarshal error?
+		if string(r.body) != "" {
+			if resp.StatusCode < 300 && r.Result != nil {
+				err = json.Unmarshal(r.body, r.Result)
+			}
+			if resp.StatusCode >= 400 && r.Error != nil {
+				json.Unmarshal(r.body, r.Error) // Should we ignore unmarshal error?
+			}
+		}
+		if r.CaptureResponseBody {
+			r.ResponseBody = bytes.NewBuffer(r.body)
 		}
 	}
-	if r.CaptureResponseBody {
-		r.ResponseBody = bytes.NewBuffer(r.body)
-	}
+
 	rsp := Response(*r)
 	response = &rsp
 
