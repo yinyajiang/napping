@@ -7,7 +7,6 @@ require (
 	github.com/jmcvetta/randutil v0.0.0-20150817122601-2bb1b664bcff
 	github.com/kr/pretty v0.3.0
 	github.com/stretchr/testify v1.7.2
-	gopkg.in/jmcvetta/napping.v3 v3.2.0
 )
 
 require (

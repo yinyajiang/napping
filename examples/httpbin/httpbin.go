@@ -11,7 +11,7 @@ package main
 
 import (
 	"fmt"
-	"gopkg.in/jmcvetta/napping.v3"
+	"github.com/yinyajiang/napping"
 	"log"
 )
 
