@@ -288,10 +288,9 @@ func TestBufferPayload(t *testing.T) {
 	s := Session{}
 	testURL, _ := url.Parse("http://" + srv.Listener.Addr().String())
 	r := Request{
-		Url:          testURL.String(),
-		Method:       "POST",
-		Payload:      bytes.NewBuffer([]byte("foobar")),
-		BufferPaylod: true,
+		Url:     testURL.String(),
+		Method:  "POST",
+		Payload: bytes.NewBuffer([]byte("foobar")),
 	}
 	resp, err := s.Send(&r)
 	if err != nil {
@@ -309,10 +308,9 @@ func TestBufferPayloadFail(t *testing.T) {
 	testURL, _ := url.Parse("http://" + srv.Listener.Addr().String())
 	j := struct{}{}
 	r := Request{
-		Url:          testURL.String(),
-		Method:       "POST",
-		Payload:      &j,
-		BufferPaylod: true,
+		Url:     testURL.String(),
+		Method:  "POST",
+		Payload: j,
 	}
 	_, err := s.Send(&r)
 	if err == nil {

@@ -12,14 +12,13 @@ requests (cookies, auth, proxies).
 
 import (
 	"bytes"
-	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -27,7 +26,6 @@ import (
 // Session defines the napping session structure
 type Session struct {
 	Client *http.Client
-	Log    bool // Log request and response
 
 	// Optional
 	Userinfo *url.Userinfo
@@ -40,53 +38,45 @@ type Session struct {
 // Send constructs and sends an HTTP request.
 func (s *Session) Send(r *Request) (response *Response, err error) {
 	r.Method = strings.ToUpper(r.Method)
-	//
+
 	// Create a URL object from the raw url string.  This will allow us to compose
 	// query parameters programmatically and be guaranteed of a well-formed URL.
-	//
 	u, err := url.Parse(r.Url)
 	if err != nil {
 		s.log("URL", r.Url)
 		s.log(err)
 		return
 	}
-	//
+
 	// Default query parameters
-	//
 	p := url.Values{}
 	if s.Params != nil {
 		for k, v := range *s.Params {
 			p[k] = v
 		}
 	}
-	//
+
 	// Parameters that were present in URL
-	//
 	if u.Query() != nil {
 		for k, v := range u.Query() {
 			p[k] = v
 		}
 	}
-	//
+
 	// User-supplied params override default
-	//
 	if r.Params != nil {
 		for k, v := range *r.Params {
 			p[k] = v
 		}
 	}
-	//
+
 	// Encode parameters
-	//
 	u.RawQuery = p.Encode()
-	//
+
 	// Attach params to response
-	//
 	r.Params = &p
-	//
-	// Create a Request object; if populated, Data field is JSON encoded as
-	// request body
-	//
+
+	// Create a Request object; if populated, Data field is JSON encoded as request body
 	header := http.Header{}
 	if s.Header != nil {
 		for k := range *s.Header {
@@ -94,64 +84,52 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 			header.Set(k, v)
 		}
 	}
-	var req *http.Request
-	var buf *bytes.Buffer
-	var steam io.Reader
+
+	var paylodReader io.Reader
 	if r.Payload != nil {
-		if r.BufferPaylod {
-			var ok bool
-			// buf can be nil interface at this point
-			// so we'll do extra nil check
-			buf, ok = r.Payload.(*bytes.Buffer)
-			if !ok {
-				err = errors.New("payload must be of type *bytes.Buffer if BufferPaylod is set to true")
-				return
-			}
-			// do not overwrite the content type with raw payload
-		} else if r.StreamPayload {
-			var ok bool
-			// buf can be nil interface at this point
-			// so we'll do extra nil check
-			steam, ok = r.Payload.(io.Reader)
-			if !ok {
-				err = errors.New("payload must be of type io.Reader if StreamPayload is set to true")
-				return
-			}
-
-			// do not overwrite the content type with raw payload
+		if _, ok := r.Payload.(io.Reader); ok {
+			r.Payload = r.Payload.(io.Reader)
 		} else {
-			var b []byte
-			b, err = json.Marshal(&r.Payload)
+			var bydata []byte
+			kind := reflect.TypeOf(r.Payload).Kind()
+			switch kind {
+			case reflect.Map:
+				fallthrough
+			case reflect.Struct:
+				bydata, err = json.Marshal(r.Payload)
+			case reflect.String:
+				r.Payload = []byte(r.Payload.(string))
+				fallthrough
+			case reflect.Slice:
+				var ok bool
+				bydata, ok = r.Payload.([]byte)
+				if !ok {
+					jsArr, ok := r.Payload.([]interface{})
+					if ok {
+						bydata, _ = json.Marshal(jsArr)
+					}
+				}
+			}
 			if err != nil {
-				s.log(err)
 				return
 			}
-			buf = bytes.NewBuffer(b)
-
-			// Overwrite the content type to json since we're pushing the payload as json
-			header.Set("Content-Type", "application/json")
-		}
-		if buf != nil {
-			req, err = http.NewRequest(r.Method, u.String(), buf)
-		} else if steam != nil {
-			req, err = http.NewRequest(r.Method, u.String(), steam)
-		} else {
-			req, err = http.NewRequest(r.Method, u.String(), nil)
-		}
-		if err != nil {
-			s.log(err)
-			return
-		}
-	} else { // no data to encode
-		req, err = http.NewRequest(r.Method, u.String(), nil)
-		if err != nil {
-			s.log(err)
-			return
+			if len(bydata) != 0 {
+				paylodReader = bytes.NewBuffer(bydata)
+				if ("{" == string(bydata[0]) && "}" == string(bydata[len(bydata)-1])) ||
+					("[" == string(bydata[0]) && "]" == string(bydata[len(bydata)-1])) {
+					header.Set("Content-Type", "application/json")
+				}
+			}
 		}
 	}
-	//
+
+	req, err := http.NewRequest(r.Method, u.String(), paylodReader)
+	if err != nil {
+		s.log(err)
+		return
+	}
+
 	// Merge Session and Request options
-	//
 	var userinfo *url.Userinfo
 	if u.User != nil {
 		userinfo = u.User
@@ -169,37 +147,16 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 		}
 	}
 	if header.Get("Accept") == "" {
-		header.Add("Accept", "application/json") // Default, can be overridden with Opts
+		header.Add("Accept", "*/*") // Default, can be overridden with Opts
 	}
 	req.Header = header
-	//
+
 	// Set HTTP Basic authentication if userinfo is supplied
-	//
 	if userinfo != nil {
 		pwd, _ := userinfo.Password()
 		req.SetBasicAuth(userinfo.Username(), pwd)
 		if u.Scheme != "https" {
 			s.log("WARNING: Using HTTP Basic Auth in cleartext is insecure.")
-		}
-	}
-	//
-	// Execute the HTTP request
-	//
-
-	// Debug log request
-	if s.Log {
-		s.log("--------------------------------------------------------------------------------")
-		s.log("REQUEST")
-		s.log("--------------------------------------------------------------------------------")
-		s.log("Method:", req.Method)
-		s.log("URL:", req.URL)
-		s.log("Header:", req.Header)
-		s.log("Form:", req.Form)
-		s.log("Payload:")
-		if r.BufferPaylod && s.Log && buf != nil {
-			s.log(base64.StdEncoding.EncodeToString(buf.Bytes()))
-		} else {
-			s.log(pretty(r.Payload))
 		}
 	}
 
@@ -226,19 +183,17 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 	if !r.NotProcessBody {
 		defer resp.Body.Close()
 
-		//
 		// Unmarshal
-		//
 		r.body, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			s.log(err)
 			return
 		}
 		if string(r.body) != "" {
-			if resp.StatusCode < 300 && r.Result != nil {
-				err = json.Unmarshal(r.body, r.Result)
+			if resp.StatusCode <= 200 && r.Result != nil {
+				json.Unmarshal(r.body, r.Result)
 			}
-			if resp.StatusCode >= 400 && r.Error != nil {
+			if resp.StatusCode > 200 && r.Error != nil {
 				json.Unmarshal(r.body, r.Error) // Should we ignore unmarshal error?
 			}
 		}
@@ -246,29 +201,6 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 
 	rsp := Response(*r)
 	response = &rsp
-
-	// Debug log response
-	if s.Log {
-		s.log("--------------------------------------------------------------------------------")
-		s.log("RESPONSE")
-		s.log("--------------------------------------------------------------------------------")
-		s.log("Status: ", response.status)
-		s.log("Header:")
-		s.log(pretty(response.HttpResponse().Header))
-		s.log("Body:")
-
-		if response.body != nil {
-			raw := json.RawMessage{}
-			if json.Unmarshal(response.body, &raw) == nil {
-				s.log(pretty(&raw))
-			} else {
-				s.log(pretty(response.RawText()))
-			}
-		} else {
-			s.log("Empty response body")
-		}
-	}
-
 	return
 }
 
@@ -358,7 +290,5 @@ func (s *Session) Delete(url string, p *url.Values, result, errMsg interface{}) 
 // Centralizing logging in one method
 // avoids spreading conditionals everywhere
 func (s *Session) log(args ...interface{}) {
-	if s.Log {
-		log.Println(args...)
-	}
+	log.Println(args...)
 }
