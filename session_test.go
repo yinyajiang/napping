@@ -282,16 +282,16 @@ func TestBasicUrlAuth(t *testing.T) {
 	}
 }
 
-func TestRawPayload(t *testing.T) {
+func TestBufferPayload(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(handleEmptyOK))
 	defer srv.Close()
 	s := Session{}
 	testURL, _ := url.Parse("http://" + srv.Listener.Addr().String())
 	r := Request{
-		Url:        testURL.String(),
-		Method:     "POST",
-		Payload:    bytes.NewBuffer([]byte("foobar")),
-		RawPayload: true,
+		Url:          testURL.String(),
+		Method:       "POST",
+		Payload:      bytes.NewBuffer([]byte("foobar")),
+		BufferPaylod: true,
 	}
 	resp, err := s.Send(&r)
 	if err != nil {
@@ -302,17 +302,17 @@ func TestRawPayload(t *testing.T) {
 	}
 }
 
-func TestRawPayloadFail(t *testing.T) {
+func TestBufferPayloadFail(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(handleEmptyOK))
 	defer srv.Close()
 	s := Session{}
 	testURL, _ := url.Parse("http://" + srv.Listener.Addr().String())
 	j := struct{}{}
 	r := Request{
-		Url:        testURL.String(),
-		Method:     "POST",
-		Payload:    &j,
-		RawPayload: true,
+		Url:          testURL.String(),
+		Method:       "POST",
+		Payload:      &j,
+		BufferPaylod: true,
 	}
 	_, err := s.Send(&r)
 	if err == nil {

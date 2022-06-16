@@ -43,7 +43,7 @@ type Request struct {
 
 	// Can be set to true if Payload is of type *bytes.Buffer and client wants
 	// to send it as-is
-	RawPayload bool
+	BufferPaylod bool
 
 	// Result is a pointer to a data structure.  On success (HTTP status < 300),
 	// response from server is unmarshaled into Result.

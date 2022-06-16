@@ -98,13 +98,13 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 	var buf *bytes.Buffer
 	var steam io.Reader
 	if r.Payload != nil {
-		if r.RawPayload {
+		if r.BufferPaylod {
 			var ok bool
 			// buf can be nil interface at this point
 			// so we'll do extra nil check
 			buf, ok = r.Payload.(*bytes.Buffer)
 			if !ok {
-				err = errors.New("payload must be of type *bytes.Buffer if RawPayload is set to true")
+				err = errors.New("payload must be of type *bytes.Buffer if BufferPaylod is set to true")
 				return
 			}
 			// do not overwrite the content type with raw payload
@@ -196,7 +196,7 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 		s.log("Header:", req.Header)
 		s.log("Form:", req.Form)
 		s.log("Payload:")
-		if r.RawPayload && s.Log && buf != nil {
+		if r.BufferPaylod && s.Log && buf != nil {
 			s.log(base64.StdEncoding.EncodeToString(buf.Bytes()))
 		} else {
 			s.log(pretty(r.Payload))

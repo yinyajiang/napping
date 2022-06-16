@@ -262,11 +262,11 @@ func TestRawRequestWithData(t *testing.T) {
 	var payload = bytes.NewBufferString("napping")
 	res := structType{}
 	req := Request{
-		Url:        "http://" + srv.Listener.Addr().String(),
-		Method:     "PUT",
-		RawPayload: true,
-		Payload:    payload,
-		Result:     &res,
+		Url:          "http://" + srv.Listener.Addr().String(),
+		Method:       "PUT",
+		BufferPaylod: true,
+		Payload:      payload,
+		Result:       &res,
 	}
 
 	resp, err := Send(&req)
@@ -285,11 +285,11 @@ func TestRawRequestWithoutData(t *testing.T) {
 	var payload *bytes.Buffer
 	res := structType{}
 	req := Request{
-		Url:        "http://" + srv.Listener.Addr().String(),
-		Method:     "PUT",
-		RawPayload: true,
-		Payload:    payload,
-		Result:     &res,
+		Url:          "http://" + srv.Listener.Addr().String(),
+		Method:       "PUT",
+		BufferPaylod: true,
+		Payload:      payload,
+		Result:       &res,
 	}
 
 	resp, err := Send(&req)
@@ -308,11 +308,11 @@ func TestRawRequestInvalidType(t *testing.T) {
 	payload := structType{}
 	res := structType{}
 	req := Request{
-		Url:        "http://" + srv.Listener.Addr().String(),
-		Method:     "PUT",
-		RawPayload: true,
-		Payload:    payload,
-		Result:     &res,
+		Url:          "http://" + srv.Listener.Addr().String(),
+		Method:       "PUT",
+		BufferPaylod: true,
+		Payload:      payload,
+		Result:       &res,
 	}
 
 	_, err := Send(&req)
@@ -320,7 +320,7 @@ func TestRawRequestInvalidType(t *testing.T) {
 	if err == nil {
 		t.Error("Validation error expected")
 	} else {
-		assert.Equal(t, err.Error(), "Payload must be of type *bytes.Buffer if RawPayload is set to true")
+		assert.Equal(t, err.Error(), "Payload must be of type *bytes.Buffer if BufferPayload is set to true")
 	}
 }
 
@@ -331,10 +331,10 @@ func TestRawResponse(t *testing.T) {
 
 	var payload = bytes.NewBufferString("napping")
 	req := Request{
-		Url:        "http://" + srv.Listener.Addr().String(),
-		Method:     "PUT",
-		RawPayload: true,
-		Payload:    payload,
+		Url:          "http://" + srv.Listener.Addr().String(),
+		Method:       "PUT",
+		BufferPaylod: true,
+		Payload:      payload,
 	}
 
 	resp, err := Send(&req)
