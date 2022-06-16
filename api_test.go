@@ -331,11 +331,10 @@ func TestRawResponse(t *testing.T) {
 
 	var payload = bytes.NewBufferString("napping")
 	req := Request{
-		Url:                 "http://" + srv.Listener.Addr().String(),
-		Method:              "PUT",
-		RawPayload:          true,
-		CaptureResponseBody: true,
-		Payload:             payload,
+		Url:        "http://" + srv.Listener.Addr().String(),
+		Method:     "PUT",
+		RawPayload: true,
+		Payload:    payload,
 	}
 
 	resp, err := Send(&req)
@@ -350,7 +349,7 @@ func TestRawResponse(t *testing.T) {
 	}
 
 	blob, _ := json.Marshal(rawResponseStruct)
-	assert.Equal(t, bytes.Equal(resp.ResponseBody.Bytes(), blob), true)
+	assert.Equal(t, bytes.Equal(resp.RawByte(), blob), true)
 }
 
 func JSONError(w http.ResponseWriter, msg string, code int) {
@@ -495,7 +494,7 @@ func HandlePut(w http.ResponseWriter, req *http.Request) {
 		JSONError(w, msg, http.StatusBadRequest)
 		return
 	}
-	return
+
 }
 
 func HandlePatch(w http.ResponseWriter, req *http.Request) {
@@ -529,7 +528,7 @@ func HandlePatch(w http.ResponseWriter, req *http.Request) {
 		JSONError(w, msg, http.StatusBadRequest)
 		return
 	}
-	return
+
 }
 
 func HandleRaw(w http.ResponseWriter, req *http.Request) {
@@ -561,5 +560,4 @@ func HandleRaw(w http.ResponseWriter, req *http.Request) {
 	w.Header().Add("content-type", "application/json")
 	w.Write(blob)
 
-	return
 }

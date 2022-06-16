@@ -6,7 +6,6 @@
 package napping
 
 import (
-	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -50,12 +49,6 @@ type Request struct {
 	// response from server is unmarshaled into Result.
 	Result interface{}
 
-	// CaptureResponseBody can be set to capture the response body for external use.
-	CaptureResponseBody bool
-
-	// ResponseBody exports the raw response body if CaptureResponseBody is true.
-	ResponseBody *bytes.Buffer
-
 	// Error is a pointer to a data structure.  On error (HTTP status >= 300),
 	// response from server is unmarshaled into Error.
 	Error interface{}
@@ -80,6 +73,11 @@ type Response Request
 // Timestamp returns the time when HTTP request was sent.
 func (r *Response) Timestamp() time.Time {
 	return r.timestamp
+}
+
+// Timestamp returns the time when HTTP request was sent.
+func (r *Response) RawByte() []byte {
+	return r.body
 }
 
 // RawText returns the body of the server's response as raw text.

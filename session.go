@@ -104,7 +104,7 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 			// so we'll do extra nil check
 			buf, ok = r.Payload.(*bytes.Buffer)
 			if !ok {
-				err = errors.New("Payload must be of type *bytes.Buffer if RawPayload is set to true")
+				err = errors.New("payload must be of type *bytes.Buffer if RawPayload is set to true")
 				return
 			}
 			// do not overwrite the content type with raw payload
@@ -114,7 +114,7 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 			// so we'll do extra nil check
 			steam, ok = r.Payload.(io.Reader)
 			if !ok {
-				err = errors.New("Payload must be of type io.Reader if StreamPayload is set to true")
+				err = errors.New("payload must be of type io.Reader if StreamPayload is set to true")
 				return
 			}
 
@@ -241,9 +241,6 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 			if resp.StatusCode >= 400 && r.Error != nil {
 				json.Unmarshal(r.body, r.Error) // Should we ignore unmarshal error?
 			}
-		}
-		if r.CaptureResponseBody {
-			r.ResponseBody = bytes.NewBuffer(r.body)
 		}
 	}
 
