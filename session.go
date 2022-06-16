@@ -93,10 +93,6 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 			var bydata []byte
 			kind := reflect.TypeOf(r.Payload).Kind()
 			switch kind {
-			case reflect.Map:
-				fallthrough
-			case reflect.Struct:
-				bydata, err = json.Marshal(r.Payload)
 			case reflect.String:
 				r.Payload = []byte(r.Payload.(string))
 				fallthrough
@@ -104,11 +100,10 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 				var ok bool
 				bydata, ok = r.Payload.([]byte)
 				if !ok {
-					jsArr, ok := r.Payload.([]interface{})
-					if ok {
-						bydata, _ = json.Marshal(jsArr)
-					}
+					bydata, err = json.Marshal(r.Payload)
 				}
+			default:
+				bydata, err = json.Marshal(r.Payload)
 			}
 			if err != nil {
 				return
