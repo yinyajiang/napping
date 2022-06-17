@@ -80,6 +80,15 @@ func (r *Response) StatusOk() bool {
 	return r.status <= 200
 }
 
+func (r *Response) IsJsonMime() bool {
+	if r.response == nil {
+		return false
+	}
+	contentType := r.response.Header.Get("Content-Type")
+	isJson := strings.HasSuffix(strings.Split(contentType, ";")[0], "json")
+	return isJson
+}
+
 // HttpResponse returns the underlying Response object from http package.
 func (r *Response) HttpResponse() *http.Response {
 	return r.response
