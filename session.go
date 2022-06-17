@@ -178,19 +178,10 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 	if !r.NotProcessBody {
 		defer resp.Body.Close()
 
-		// Unmarshal
 		r.body, err = ioutil.ReadAll(resp.Body)
 		if err != nil {
 			s.log(err)
 			return
-		}
-		if string(r.body) != "" {
-			if resp.StatusCode <= 200 && r.Result != nil {
-				json.Unmarshal(r.body, r.Result)
-			}
-			if resp.StatusCode > 200 && r.Error != nil {
-				json.Unmarshal(r.body, r.Error) // Should we ignore unmarshal error?
-			}
 		}
 	}
 
@@ -200,83 +191,69 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 }
 
 // Get sends a GET request.
-func (s *Session) Get(url string, p *url.Values, result, errMsg interface{}) (*Response, error) {
+func (s *Session) Get(url string, p *url.Values) (*Response, error) {
 	r := Request{
 		Method: "GET",
 		Url:    url,
 		Params: p,
-		Result: result,
-		Error:  errMsg,
 	}
 	return s.Send(&r)
 }
 
 // Options sends an OPTIONS request.
-func (s *Session) Options(url string, result, errMsg interface{}) (*Response, error) {
+func (s *Session) Options(url string) (*Response, error) {
 	r := Request{
 		Method: "OPTIONS",
 		Url:    url,
-		Result: result,
-		Error:  errMsg,
 	}
 	return s.Send(&r)
 }
 
 // Head sends a HEAD request.
-func (s *Session) Head(url string, result, errMsg interface{}) (*Response, error) {
+func (s *Session) Head(url string) (*Response, error) {
 	r := Request{
 		Method: "HEAD",
 		Url:    url,
-		Result: result,
-		Error:  errMsg,
 	}
 	return s.Send(&r)
 }
 
 // Post sends a POST request.
-func (s *Session) Post(url string, payload, result, errMsg interface{}) (*Response, error) {
+func (s *Session) Post(url string, payload interface{}) (*Response, error) {
 	r := Request{
 		Method:  "POST",
 		Url:     url,
 		Payload: payload,
-		Result:  result,
-		Error:   errMsg,
 	}
 	return s.Send(&r)
 }
 
 // Put sends a PUT request.
-func (s *Session) Put(url string, payload, result, errMsg interface{}) (*Response, error) {
+func (s *Session) Put(url string, payload interface{}) (*Response, error) {
 	r := Request{
 		Method:  "PUT",
 		Url:     url,
 		Payload: payload,
-		Result:  result,
-		Error:   errMsg,
 	}
 	return s.Send(&r)
 }
 
 // Patch sends a PATCH request.
-func (s *Session) Patch(url string, payload, result, errMsg interface{}) (*Response, error) {
+func (s *Session) Patch(url string, payload interface{}) (*Response, error) {
 	r := Request{
 		Method:  "PATCH",
 		Url:     url,
 		Payload: payload,
-		Result:  result,
-		Error:   errMsg,
 	}
 	return s.Send(&r)
 }
 
 // Delete sends a DELETE request.
-func (s *Session) Delete(url string, p *url.Values, result, errMsg interface{}) (*Response, error) {
+func (s *Session) Delete(url string, p *url.Values) (*Response, error) {
 	r := Request{
 		Method: "DELETE",
 		Url:    url,
 		Params: p,
-		Result: result,
-		Error:  errMsg,
 	}
 	return s.Send(&r)
 }

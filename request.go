@@ -38,14 +38,6 @@ type Request struct {
 	// Not capture response body and unmarshaled
 	NotProcessBody bool
 
-	// Result is a pointer to a data structure.  On success (HTTP status < 300),
-	// response from server is unmarshaled into Result.
-	Result interface{}
-
-	// Error is a pointer to a data structure.  On error (HTTP status >= 300),
-	// response from server is unmarshaled into Error.
-	Error interface{}
-
 	// Optional
 	Userinfo *url.Userinfo
 	Header   *http.Header
@@ -82,6 +74,10 @@ func (r *Response) RawText() string {
 // not yet been sent.
 func (r *Response) Status() int {
 	return r.status
+}
+
+func (r *Response) StatusOk() bool {
+	return r.status <= 200
 }
 
 // HttpResponse returns the underlying Response object from http package.
