@@ -115,7 +115,12 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 		}
 	}
 
-	req, err := http.NewRequest(r.Method, u.String(), r.Payload.(io.Reader))
+	var paylodReader io.Reader
+	if r.Payload != nil {
+		paylodReader = r.Payload.(io.Reader)
+	}
+
+	req, err := http.NewRequest(r.Method, u.String(), paylodReader)
 	if err != nil {
 		s.log(err)
 		return
