@@ -85,11 +85,8 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 		}
 	}
 
-	var paylodReader io.Reader
 	if r.Payload != nil {
-		if _, ok := r.Payload.(io.Reader); ok {
-			r.Payload = r.Payload.(io.Reader)
-		} else {
+		if _, ok := r.Payload.(io.Reader); !ok {
 			var bydata []byte
 			kind := reflect.TypeOf(r.Payload).Kind()
 			switch kind {
@@ -109,7 +106,7 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 				return
 			}
 			if len(bydata) != 0 {
-				paylodReader = bytes.NewBuffer(bydata)
+				r.Payload = bytes.NewBuffer(bydata)
 				if ("{" == string(bydata[0]) && "}" == string(bydata[len(bydata)-1])) ||
 					("[" == string(bydata[0]) && "]" == string(bydata[len(bydata)-1])) {
 					header.Set("Content-Type", "application/json")
@@ -118,7 +115,7 @@ func (s *Session) Send(r *Request) (response *Response, err error) {
 		}
 	}
 
-	req, err := http.NewRequest(r.Method, u.String(), paylodReader)
+	req, err := http.NewRequest(r.Method, u.String(), r.Payload.(io.Reader))
 	if err != nil {
 		s.log(err)
 		return
