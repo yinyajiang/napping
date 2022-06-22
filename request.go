@@ -77,7 +77,7 @@ func (r *Response) Status() int {
 }
 
 func (r *Response) StatusOk() bool {
-	return r.status <= 200
+	return r.status <= 300
 }
 
 func (r *Response) IsJsonMime() bool {
